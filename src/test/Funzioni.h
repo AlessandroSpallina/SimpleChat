@@ -3,7 +3,8 @@
 /*---Define---*/
 #define MAXCLIENT 3
 /*--Test Funzioni--*/
-void ServerLogin (conn connection[], int server_on){
+void *ServerLogin (void *arg){
+	parselo *a = (parselo*)arg;
 	conn sconn;
 	servertoclient stoc;
 	int tmp = 0;
@@ -35,7 +36,7 @@ void ServerLogin (conn connection[], int server_on){
 	}
 	printf("Avvio Accept in corso...\n");
 /*------Server di Registrazione-----*/	
-	while (server_on){
+	while (a->server_on){
 		socket_client = accept(socket_server, (struct sockaddr*)&address, &lensock);
 		if (socket_client == -1){
 			printf("Errore Avvio Bind\n");
@@ -79,10 +80,10 @@ void ServerLogin (conn connection[], int server_on){
 			write(socket_client, &stoc, sizeof(servertoclient));
 		}
 		for (;tmp < MAXCLIENT; tmp++){
-			if (!connection[tmp].CLID){
-				connection[tmp].SOCK = socket_client;
+			if (!a->connection[tmp].CLID){
+				a->connection[tmp].SOCK = socket_client;
 				stoc.CMD = CONNECTED;
-				write (connection[tmp].SOCK, &stoc, sizeof(servertoclient));
+				write (a->connection[tmp].SOCK, &stoc, sizeof(servertoclient));
 				printf("Inviato CONNECTED\n");
 				tmp++;
 				break;
@@ -90,3 +91,11 @@ void ServerLogin (conn connection[], int server_on){
 		}
 	}
 }
+
+void ServerChat (conn connection[], int server_on){
+	
+	
+	
+	
+	
+	}

@@ -1,21 +1,3 @@
-/****************************************************************************
-* Copyright © 2017 Alessio Greco
-* github: https://github.com/RootPOI
-*
-* This program is free software: you can redistribute it and/or modify
-* it under the terms of the GNU General Public License as published by
-* the Free Software Foundation, either version 3 of the License, or
-* (at your option) any later version.
-*
-* This program is distributed in the hope that it will be useful,
-* but WITHOUT ANY WARRANTY; without even the implied warranty of
-* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-* GNU General Public License for more details.
-*
-* You should have received a copy of the GNU General Public License
-* along with this program. If not, see <http://www.gnu.org/licenses/>.
-****************************************************************************/
-
 /*Progetto CHAT, Gestione Server -- Greco Alessio -- UniCT -- */
 /*----------------------*/
 /*-------Header---------*/
@@ -30,16 +12,31 @@
 #include <arpa/inet.h>
 #include <time.h>
 #include <unistd.h>
+#include <pthread.h>
 /*----Header Personali----*/
 #include "Funzioni.h"
 /*---------Define--------*/
 #define SERVER_ON 1
 #define MAXCLIENT 3
+
 /*--Variabili Server--*/
 conn connessione[MAXCLIENT];
+pthread_t serlo, sercli;
+int threadlogin, threadclient;
+parselo paramserverlog;
 /*-------Main---------*/
 int main (void){
 	printf("Avvio Server Chat in Corso...\n");
 	sleep(1);
-	ServerLogin(connessione, SERVER_ON);
+	printf("Avvio Server Login in Corso...\n");
+	printf("Generazione ThreadLogin in corso...\n");
+	paramserverlog.connection = connessione;
+	paramserverlog.server_on = SERVER_ON;
+	printf("pronti...\n");
+	if (pthread_create(&serlo, NULL, ServerLogin, (void *)&paramserverlog) == -1) {
+		printf("Errore Creazione Thread\n");
+		exit (EXIT_FAILURE);
+	}
+	while (1);
 }
+
