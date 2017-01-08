@@ -1,10 +1,28 @@
-/*--Header--*/
+/****************************************************************************
+-* Copyright © 2017 Alessio Greco
+-* github: https://github.com/RootPOI
+-*
+-* This program is free software: you can redistribute it and/or modify
+-* it under the terms of the GNU General Public License as published by
+-* the Free Software Foundation, either version 3 of the License, or
+-* (at your option) any later version.
+-*
+-* This program is distributed in the hope that it will be useful,
+-* but WITHOUT ANY WARRANTY; without even the implied warranty of
+-* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+-* GNU General Public License for more details.
+-*
+-* You should have received a copy of the GNU General Public License
+-* along with this program. If not, see <http://www.gnu.org/licenses/>.
+-****************************************************************************/
+/*----Header Funzioni Server----*/
+/*------Header-----*/
 #include "HeaderCHAT.h"
-/*---Define---*/
+/*------Define-----*/
 #define MAXCLIENT 3
 /*--Test Funzioni--*/
 void *ServerLogin (void *arg){
-	parselo *a = (parselo*)arg;
+	parse *a = (parse*)arg;
 	conn sconn;
 	servertoclient stoc;
 	int tmp = 0;
@@ -73,29 +91,25 @@ void *ServerLogin (void *arg){
 				}
 			}
 		};
-		printf("Stato Memoria = %d\n",tmp);
-		if (tmp == MAXCLIENT){
+/*------Ingresso in Sezione Critica-----------*/
+		pthread_mutex_lock (a->gmem);
+		printf("Stato Memoria = %d\n",a->som);
+		if (a->som == MAXCLIENT){
 			printf("Inviato BUSY\n");
 			stoc.CMD = BUSY;
 			write(socket_client, &stoc, sizeof(servertoclient));
 		}
-		for (;tmp < MAXCLIENT; tmp++){
-			if (!a->connection[tmp].CLID){
-				a->connection[tmp].SOCK = socket_client;
+		for (;a->som < MAXCLIENT; a->som++){
+			if (!a->connection[a->som].CLID){
+				a->connection[a->som].SOCK = socket_client;
 				stoc.CMD = CONNECTED;
-				write (a->connection[tmp].SOCK, &stoc, sizeof(servertoclient));
+				write (a->connection[a->som].SOCK, &stoc, sizeof(servertoclient));
 				printf("Inviato CONNECTED\n");
-				tmp++;
+				a->som++;
 				break;
 			}
 		}
+		pthread_mutex_unlock(a->gmem);
+/*---------Uscita Sezione Critica-------------*/
 	}
 }
-
-void ServerChat (conn connection[], int server_on){
-	
-	
-	
-	
-	
-	}
