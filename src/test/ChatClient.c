@@ -150,7 +150,7 @@ int main (void){
 			printf("Connesso\n");		
 			printf("Apertura Menu Testuale\n");
 			while (1){
-				printf("1 - Lista Contatti Attivi\n2 - Modifica Stato\n3 - Invia Messaggio Privato\n4 - Esci\n");
+				printf("1 - Lista Contatti Attivi\n2 - Invia Messaggio Pubblico\n3 - Invia Messaggio Privato\n4 - Esci\n");
 				if (connection.CLGRP == MODERATOR) printf("Nascosto\n");
 					scanf("%d", &scelta);
 					FFLUSH;
@@ -174,6 +174,13 @@ int main (void){
 							break;
 						}
 						case 2:{
+							toclient.CMD = PUBLIC;
+							printf("Inserire il Messaggio da mandare\n");
+							LDS(toclient.MSGSTOC.message, MAXLENGTHMESSAGE);
+							if (write (socket_message, &toclient, sizeof(servertoclient)) == -1){
+								printf("Errore Invio Struct Messaggio\n");
+								exit(EXIT_FAILURE);
+							}
 							break;
 						}
 						case 3:{

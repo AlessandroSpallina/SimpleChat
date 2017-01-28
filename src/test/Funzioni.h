@@ -89,7 +89,7 @@ void *ServerLogin (void *arg){
 /*------Ingresso in Sezione Critica-----------*/
 		pthread_mutex_lock (a->gmem);		
 		for (tmp = 0;tmp < MAXCLIENT; tmp++){
-			printf("id %d\n",a->connection[tmp].CLID);
+			//printf("id %d\n",a->connection[tmp].CLID);
 			if (!a->connection[tmp].CLID){
 				//a->connection[tmp].SOCK = socket_client;
 				a->connection[tmp].CLID = sconn.CLID;
@@ -224,13 +224,13 @@ void *ThreadMessage (void *arg){
 	servertoclient message;
 	int socketmessage = param->socket_clientchat;
 	read (socketmessage, &message, sizeof(servertoclient));
-	printf("[THMESS]ID %d Sock %d\n",message.MSGSTOC.CLID, socketmessage);
+	//printf("[THMESS]ID %d Sock %d\n",message.MSGSTOC.CLID, socketmessage);
 	int count, tmp, on = 1;
 	pthread_mutex_lock(param->gmem);
 	for (count = 0; count < MAXCLIENT; count++){
 			if(param->connection[count].CLID == message.MSGSTOC.CLID){
 				param->connection[count].SOCK = socketmessage;
-				printf("[THMESS FOR]id %d sock %d\n",param->connection[count].CLID, param->connection[count].SOCK);
+				//printf("[THMESS FOR]id %d sock %d\n",param->connection[count].CLID, param->connection[count].SOCK);
 				pthread_mutex_unlock(param->gmem);
 				break;
 			}
@@ -250,11 +250,11 @@ void *ThreadMessage (void *arg){
 				pthread_mutex_lock (param->gmem);
 				for(count = 0; count < MAXCLIENT; count++){
 					if (param->connection[count].CLID == message.MSGSTOC.MSGTOID){
-						printf("[SOCK]%d\n", param->connection[count].SOCK);
+						//printf("[SOCK]%d\n", param->connection[count].SOCK);
 						tmp = param->connection[count].SOCK;
-						printf("[MESSAGE] Sock %d\n", tmp);
+						//printf("[MESSAGE] Sock %d\n", tmp);
 						write(tmp, &message, sizeof(servertoclient));
-						printf("Messaggio spedito a %d\n", tmp);
+						//printf("Messaggio spedito a %d\n", tmp);
 						break;
 					}
 				}
@@ -265,6 +265,19 @@ void *ThreadMessage (void *arg){
 					write (socketmessage, &message, sizeof(servertoclient));
 				}
 				break;
+			}
+			case PUBLIC:{
+				printf("[MESSAGE]<PUBLIC> from %d: %s\n", message.MSGSTOC.CLID, message.MSGSTOC.message);
+				pthread_mutex_lock (param->gmem);
+				for(count = 0; count < MAXCLIENT; count++){
+					if (param->connection[count].CLID){
+						tmp = param->connection[count].SOCK;
+						//printf("[SOCK]%d\n", param->connection[count].SOCK);
+						write(tmp, &message, sizeof(servertoclient));
+						//printf("Messaggio spedito a %d\n", tmp);
+					}
+				}
+				pthread_mutex_unlock(param->gmem);
 			}
 		}
 	}
