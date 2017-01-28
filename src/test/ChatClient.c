@@ -19,6 +19,7 @@
 /*----------------------*/
 /*-------Header---------*/
 #include <string.h>
+#include <signal.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include <sys/types.h>
@@ -30,56 +31,201 @@
 #include <time.h>
 #include <unistd.h>
 #include "HeaderCHAT.h"
+#include <sys/sem.h>
+#include <sys/ipc.h>
+#include <pthread.h>
 /*---------Define--------*/
-#define MAXCLIENT 10
 #define SERVER_ON 1
+#define USERTYPE USER
+#define FFLUSH while(getchar() != '\n')
+
 /*------Variabili-----*/
 conn connection;
-servertoclient stoc;
+servertoclient stoc, msg;
+servertoclient toclient;
+int scelta, count,socket_login, socket_chat, socket_message;
+boolean clienton;
+pthread_t recmsg;
+/*----Funzioni------*/
+void LDS (char s[], unsigned short dim){
+		unsigned short i;
+		for (i = 0; i < dim; i++)
+			if((s[i] = getchar()) == '\n') break;
+		if (i == dim -1) FFLUSH;
+		s[i] = '\0';
+	
+}
+void *ClientThreadMSG (void *arg){
+	servertoclient message;
+	printf("[CHAT ATTIVA]\n");
+	while (1){
+		read(socket_message, &message, sizeof(servertoclient));
+		switch (message.CMD){
+			case PRIVATE:{
+				printf("[PRIVATO]%d: %s\n",message.MSGSTOC.CLID, message.MSGSTOC.message);
+				break;
+			}
+			case PUBLIC:{
+				printf("[PUBBLICO]%d: %s\n",message.MSGSTOC.CLID, message.MSGSTOC.message);
+				break;
+			}
+			case OFFLINE:{
+				printf("[SERVER]: L'utente digitato non esiste o non e' OFFLINE\n");
+				break;
+			}
+		}
+	}
+}
 /*-------Main---------*/
 int main (void){
-	printf("Avvio Client(fisso)...\n");
-	printf("Avvio Socket Client in corso...\n");
-	int socket_client;
-	if ((socket_client = socket(AF_INET, SOCK_STREAM, 0)) == -1){
-		printf("Errore Creazione Socket\n");
+	printf("Avvio Client...\n");
+	printf("Avvio Socket Client (Login) in corso...\n");
+	if ((socket_login = socket(AF_INET, SOCK_STREAM, 0)) == -1){
+		printf("Errore Creazione SocketLogin\n");
 		exit(EXIT_FAILURE);
 	}
 	struct sockaddr_in addresserver;
 	addresserver.sin_family = AF_INET;
 	addresserver.sin_port = htons(PORTLOGIN);
 	addresserver.sin_addr.s_addr = inet_addr(IPSERVER);
-	printf("Connessione in Corso...\n");
-	if (connect (socket_client, (struct sockaddr*)&addresserver, sizeof(addresserver)) == -1){
-		printf("Errore Connessione\n");
+	printf("Connessione in Corso al ServerLogin...\n");
+	if (connect (socket_login, (struct sockaddr*)&addresserver, sizeof(addresserver)) == -1){
+		printf("Errore Connessione al ServerLogin\n");
 		exit(EXIT_FAILURE);
 	}
-	printf("Connesso\n");
 	printf("Generazione della Struct di Connessione\n");
 	srand(time(NULL));
 	connection.CLID = (rand()%2500)+(rand()%2500);
-	connection.CLGRP = USER;
+	connection.CLGRP = USERTYPE;
 	connection.STAT = ONLINE;
 	printf("Invio Struct\n");
-	if(write (socket_client, &connection, sizeof(conn)) == -1){
+	if(write (socket_login, &connection, sizeof(conn)) == -1){
 		printf("Errore Invio Struct Messaggio\n");
 		exit(EXIT_FAILURE);
 	}
 	printf("Connessione in corso...\n");
-	if (read(socket_client, &stoc, sizeof(servertoclient)) == -1){
+	if (read(socket_login, &stoc, sizeof(servertoclient)) == -1){
 		printf("Errore Ricezione Risposta Collegamento\n");
 		exit(EXIT_FAILURE);
 	}
+	printf("Connesso al ServerLogin\n");	
 	switch (stoc.CMD){
 		case BUSY: {
 			printf("Massima quantita' di client raggiunta\n");
 			exit(EXIT_FAILURE);
 	}
 		case CONNECTED: {
-			printf("Connesso\n");
-			exit(EXIT_FAILURE);
-		}
-	}	
-}
+			printf("Avvio Socket Client (Chat) in corso...\n");
+			if ((socket_chat = socket(AF_INET, SOCK_STREAM, 0)) == -1){
+				printf("Errore Creazione SocketChat\n");
+				exit(EXIT_FAILURE);
+			}
+			if ((socket_message = socket(AF_INET, SOCK_STREAM, 0)) == -1){
+				printf("Errore Creazione SocketChat\n");
+				exit(EXIT_FAILURE);
+			}
+			struct sockaddr_in addresserverchat, addresservermessage;
+			addresserverchat.sin_family = AF_INET;
+			addresserverchat.sin_port = htons(PORTCHAT);
+			addresserverchat.sin_addr.s_addr = inet_addr(IPSERVER);
+			addresservermessage.sin_family = AF_INET;
+			addresservermessage.sin_port = htons(PORTMESSAGE);
+			addresservermessage.sin_addr.s_addr = inet_addr(IPSERVER);
+			printf("Connessione in Corso al ServerLogin...\n");
+			if (connect (socket_chat, (struct sockaddr*)&addresserverchat, sizeof(addresserverchat)) == -1){
+				printf("Errore Connessione al ServerLogin\n");
+				exit(EXIT_FAILURE);
+			}
+			printf("Connessione in Corso al ServerMessage...\n");
+			if (connect (socket_message, (struct sockaddr*)&addresservermessage, sizeof(addresservermessage)) == -1){
+				printf("Errore Connessione al ServerMessage\n");
+				exit(EXIT_FAILURE);
+			}
+			toclient.MSGSTOC.CLID = connection.CLID;
+			write (socket_message, &toclient, sizeof(servertoclient));
+			if (pthread_create(&recmsg, NULL, ClientThreadMSG, NULL) == -1){
+				printf("Errore Creazione ThreadPVT\n");
+				exit(EXIT_FAILURE);
+				}
+			printf("Connesso\n");		
+			printf("Apertura Menu Testuale\n");
+			while (1){
+				printf("1 - Lista Contatti Attivi\n2 - Modifica Stato\n3 - Invia Messaggio Privato\n4 - Esci\n");
+				if (connection.CLGRP == MODERATOR) printf("Nascosto\n");
+					scanf("%d", &scelta);
+					FFLUSH;
+					switch (scelta){
+						case 1:{
+							int tmp[MAXCLIENT];
+							msg.CMD = LISTUSER;
+							if(write (socket_chat, &msg, sizeof(servertoclient)) == -1){
+								printf("Errore Invio Struct Messaggio\n");
+								exit(EXIT_FAILURE);
+							}
+							if(read (socket_chat, tmp, sizeof(tmp)) == -1){
+								printf("Errore Lettura\n");
+								exit(EXIT_FAILURE);
+								}
+							for (count = 0; count < MAXCLIENT; count++){
+									if (tmp[count] && tmp[count] != connection.CLID){
+										printf("Utente Attivo %d\n", tmp[count]);
+									}
+							}
+							break;
+						}
+						case 2:{
+							break;
+						}
+						case 3:{
+							printf("Selezionare l'id utente\n");
+							toclient.CMD = PRIVATE;
+							scanf("%d", &toclient.MSGSTOC.MSGTOID);
+							FFLUSH;
+							printf("Inserire il Messaggio da mandare\n");
+							LDS(toclient.MSGSTOC.message, MAXLENGTHMESSAGE);
+							if (write (socket_message, &toclient, sizeof(servertoclient)) == -1){
+								printf("Errore Invio Struct Messaggio\n");
+								exit(EXIT_FAILURE);
+							}
+							break;
+						}
+						case 4:{
+							printf("Chiusura in Corso\n");
+							msg.MSGSTOC.CLID = connection.CLID;
+							msg.CMD = EXIT;
+							if(write (socket_chat, &msg, sizeof(servertoclient)) == -1){
+								printf("Errore Invio Struct Messaggio\n");
+								exit(EXIT_FAILURE);
+							}
+							if(write (socket_message, &msg, sizeof(servertoclient)) == -1){
+								printf("Errore Invio Struct Messaggio\n");
+								exit(EXIT_FAILURE);
+							}
+							if(pthread_kill(recmsg, SIGSTOP) == -1){
+								printf("Errore Kill\n");
+								exit(EXIT_FAILURE);
+							}
+							if(pthread_cancel (recmsg) == -1){
+								printf("Errore Cancellazione PthreadCHAT\n");
+								exit(EXIT_FAILURE);
+							}
+							if (close(socket_login) == -1){
+								printf("Errore Chiusura Socket Client \n");
+								exit(EXIT_FAILURE);
+							}
+							if (close(socket_chat) == -1){
+								printf("Errore Chiusura Socket Client \n");
+							}
+							if (close(socket_message) == -1){
+								printf("Errore Chiusura Socket Client \n");
+							}
+							exit(EXIT_SUCCESS);
+						}
+						default: printf("Nessuna scelta valida\n");
+					}
+				}
+			}
+		}	
+	}
 
 

@@ -30,38 +30,83 @@
 #include <time.h>
 #include <unistd.h>
 #include <pthread.h>
+#include <wait.h>
+
 /*----Header Personali----*/
 #include "Funzioni.h"
 /*---------Define--------*/
 #define SERVER_ON 1
-#define MAXCLIENT 3
 
 /*--Variabili Server--*/
 conn connessione[MAXCLIENT];
-pthread_t serlo, sercli;
+pthread_t serlo, serchat, sermess;
 int threadlogin, threadclient;
-parse paramserverlog;
+parse paramserverlog, paramserverchat, paramservermessage;
 pthread_mutex_t gmem;
-int stateofmemory;
+
 /*-------Main---------*/
 int main (void){
-	printf("Avvio Server Chat in Corso...\n");
-	sleep(1);
-	printf("Avvio Server Login in Corso...\n");
+	printf("Inizializzazione Memoria...\n");
+	for(int count = 0; count < MAXCLIENT; count++){
+		connessione[count].CLID = 0;
+	}
 	printf("Inizializzazione Mutex in Corso...\n");
 	if (pthread_mutex_init(&gmem, NULL) == -1){
 		printf("Errore Inizializzazione Mutex\n");
 		exit(EXIT_FAILURE);
 	}
+/*---------------------------------------------------------------------------------*/
+	printf("Avvio Server Login in Corso...\n");
 	printf("Generazione ThreadLogin in corso...\n");
+	sleep (1);
 	paramserverlog.connection = connessione;
 	paramserverlog.server_on = SERVER_ON;
 	paramserverlog.gmem = &gmem;
-	paramserverlog.som = stateofmemory;
 	if (pthread_create(&serlo, NULL, ServerLogin, (void *)&paramserverlog) == -1) {
 		printf("Errore Creazione Thread\n");
 		exit (EXIT_FAILURE);
 	}
-	while (1);
+/*---------------------------------------------------------------------------------*/
+	printf("Avvio Server Chat in Corso...\n");
+	printf("Generazione ThreadChat in corso...\n");
+	sleep(1);
+	paramserverchat.connection = connessione;
+	paramserverchat.server_on = SERVER_ON;
+	paramserverchat.gmem = &gmem;
+	if (pthread_create(&serchat, NULL, ServerChat, (void *)&paramserverchat) == -1) {
+		printf("Errore Creazione Thread\n");
+		exit (EXIT_FAILURE);
+	}
+/*----------------------------------------------------------------------------------*/
+	printf("Avvio Server Message in Corso...\n");
+	printf("Generazione ThreadMessage in corso...\n");
+	sleep(1);
+	paramservermessage.connection = connessione;
+	paramservermessage.server_on = SERVER_ON;
+	paramservermessage.gmem = &gmem;
+	if (pthread_create(&sermess, NULL, ServerMessage, (void *)&paramservermessage) == -1) {
+		printf("Errore Creazione Thread\n");
+		exit (EXIT_FAILURE);
+	}
+/*----------------------------------------------------------------------------------*/
+	
+	pthread_join(serlo, NULL);
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
 }
 

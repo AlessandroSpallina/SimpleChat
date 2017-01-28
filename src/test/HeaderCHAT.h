@@ -21,11 +21,14 @@
 #define IPSERVER "127.0.0.1"
 #define PORTLOGIN 2001
 #define PORTCHAT 2002
+#define PORTMESSAGE 2003
+#define MAXCLIENT 3
 /*----Enum Principali----*/
 typedef enum{
 	BUSY = 0,
 	NEWMESSAGE = 1,
 	CONNECTED = 2,
+	LISTUSER = 3,
 	} commandcli;
 typedef enum {
 	USER = 0,
@@ -35,12 +38,15 @@ typedef enum {
 	EXIT = 0,
 	ONLINE = 1,
 	STAND_BY = 2,
+	PRIVATE = 3,
+	PUBLIC = 4,
+	OFFLINE = 5,
 	} status;
 /*--Struct Principali--*/
 typedef struct {
 	time_t send_time;
 	char message[MAXLENGTHMESSAGE];
-	short CLID, MSGTOID;
+	int CLID, MSGTOID;
 	group CLGRP;
 	status STAT;
 	}msgcontext;
@@ -56,6 +62,14 @@ typedef struct {
 	}servertoclient;
 typedef struct {
 	conn *connection;
-	int server_on, som;
+	int server_on;
 	pthread_mutex_t *gmem;
 	}parse;
+typedef struct {
+	int socket_clientchat;
+	pthread_mutex_t *gmem;
+	conn *connection;
+	}parth;
+
+/*---Def.Variabili Statiche---*/
+typedef unsigned short boolean;
