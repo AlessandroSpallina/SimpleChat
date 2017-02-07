@@ -37,7 +37,6 @@
 /*---------Define--------*/
 #define SERVER_ON 1
 #define USERTYPE USER
-#define FFLUSH while(getchar() != '\n')
 
 /*------Variabili-----*/
 conn connection;
@@ -114,6 +113,11 @@ int main (void){
 	connection.CLID = (rand()%2500)+(rand()%2500);
 	connection.CLGRP = USERTYPE;
 	connection.STAT = ONLINE;
+	strcpy(connection.psk, "1806");
+	strcat(connection.psk, PSK);
+	strcat(connection.psk, "2016");
+	//printf("%s\n", connection.psk);
+	stoc.CMD = ERRORPSK;
 	if(write (socket_login, &connection, sizeof(conn)) == -1){
 		printf("Errore Invio Struct Messaggio\n");
 		exit(EXIT_FAILURE);
@@ -123,13 +127,17 @@ int main (void){
 		printf("Errore Ricezione Risposta Collegamento\n");
 		exit(EXIT_FAILURE);
 	}
-	printf("Connesso al ServerLogin\n");	
 	switch (stoc.CMD){
+		case ERRORPSK: {
+			printf("Errore PSK\n");
+			exit(EXIT_FAILURE);
+		}
 		case BUSY: {
 			printf("Massima quantita' di client raggiunta\n");
 			exit(EXIT_FAILURE);
-	}
+		}
 		case CONNECTED: {
+			printf("Connesso al ServerLogin\n");
 			printf("Avvio Socket Client (Chat) in corso...\n");
 			if ((socket_chat = socket(AF_INET, SOCK_STREAM, 0)) == -1){
 				printf("Errore Creazione SocketChat\n");

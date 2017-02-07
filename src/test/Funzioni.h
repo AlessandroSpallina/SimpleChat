@@ -26,6 +26,7 @@ void *ServerLogin (void *arg){
 	int tmp = 0;
 	char on_client[7] = "Online", stand_bycli[8] = "Standby";
 	char user[5] = "User", moderator[10] = "Moderator";
+	char psk[73] = "1806";
 	printf("Avvio SocketLogin in corso...\n");
 	int socket_server, socket_client;
 	/*-------*/
@@ -40,6 +41,9 @@ void *ServerLogin (void *arg){
 	}
 	/*------*/
 	signal(SIGPROF,AllOutLogin);
+	strcat(psk, PSK);
+	strcat(psk, "2016");
+	//printf("%s\n", psk);
 	if ((socket_server = socket(AF_INET, SOCK_STREAM, 0)) == -1){
 		printf("Errore Creazione Socket\n");
 		exit(EXIT_FAILURE);
@@ -75,29 +79,30 @@ void *ServerLogin (void *arg){
 			printf("Errore Ricezione\n");
 			exit(EXIT_FAILURE);
 		}
-		switch (sconn.CLGRP){
-			case USER: {
-				switch (sconn.STAT){		
-					case ONLINE:
-						printf("[LOGIN]Richiesta da...-> Id: %d, Gruppo: %s, Status: %s\n", sconn.CLID, user, on_client);
-						break;
-					case STAND_BY:
-						printf("[LOGIN]Richiesta da...-> Id: %d, Gruppo: %s, Status: %s\n", sconn.CLID, user, stand_bycli);
-						break;
+		if (!strcmp(sconn.psk, psk)){
+			switch (sconn.CLGRP){
+				case USER: {
+					switch (sconn.STAT){		
+						case ONLINE:
+							printf("[LOGIN]Richiesta da...-> Id: %d, Gruppo: %s, Status: %s\n", sconn.CLID, user, on_client);
+							break;
+						case STAND_BY:
+							printf("[LOGIN]Richiesta da...-> Id: %d, Gruppo: %s, Status: %s\n", sconn.CLID, user, stand_bycli);
+							break;
+					}
+					break;
 				}
-				break;
-			}
-			case MODERATOR: {
-				switch (sconn.STAT){
-					case ONLINE:
-						printf("[LOGIN]Richiesta da...-> Id: %d, Gruppo: %s, Status: %s\n", sconn.CLID, moderator, on_client);
-						break;
-					case STAND_BY:
-						printf("[LOGIN]Richiesta da...-> Id: %d, Gruppo: %s, Status: %s\n", sconn.CLID, moderator, stand_bycli);
-						break;
+				case MODERATOR: {
+					switch (sconn.STAT){
+						case ONLINE:
+							printf("[LOGIN]Richiesta da...-> Id: %d, Gruppo: %s, Status: %s\n", sconn.CLID, moderator, on_client);
+							break;
+						case STAND_BY:
+							printf("[LOGIN]Richiesta da...-> Id: %d, Gruppo: %s, Status: %s\n", sconn.CLID, moderator, stand_bycli);
+							break;
+					}
 				}
 			}
-		}
 /*------Ingresso in Sezione Critica-----------*/
 				pthread_mutex_lock (a->gmem);		
 				for (tmp = 0;tmp < MAXCLIENT; tmp++){
@@ -117,6 +122,12 @@ void *ServerLogin (void *arg){
 				}
 				pthread_mutex_unlock(a->gmem);
 /*---------Uscita Sezione Critica-------------*/	
+			}
+			else {
+				printf("[LOGIN]PSK ERRATA, Chiusura Socket\n");
+				
+				close(socket_client);
+			}
 			}
 		}
 		

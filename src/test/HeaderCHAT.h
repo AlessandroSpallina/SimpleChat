@@ -23,6 +23,8 @@
 #define PORTCHAT 2002
 #define PORTMESSAGE 2017
 #define MAXCLIENT 3
+#define PSK "90dcb593d9a3e464005fb46c04edf241794f7b69a7a17099c71e2439dc4edf36"
+#define FFLUSH while(getchar() != '\n')
 /*----Enum Principali----*/
 typedef enum{
 	BUSY = 0,
@@ -32,6 +34,7 @@ typedef enum{
 	LOGIN = 4,
 	SERVEROFF = 5,
 	OFFLINE = 6,
+	ERRORPSK = 7,
 	} commandcli;
 typedef enum {
 	USER = 0,
@@ -57,6 +60,7 @@ typedef struct {
 	group CLGRP;
 	status STAT;
 	short CLID;
+	char psk[73];
 	}conn;
 typedef struct {
 	commandcli CMD;
