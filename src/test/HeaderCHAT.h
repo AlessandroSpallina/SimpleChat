@@ -21,7 +21,7 @@
 #define IPSERVER "127.0.0.1"
 #define PORTLOGIN 2001
 #define PORTCHAT 2002
-#define PORTMESSAGE 2003
+#define PORTMESSAGE 2017
 #define MAXCLIENT 3
 /*----Enum Principali----*/
 typedef enum{
@@ -29,6 +29,9 @@ typedef enum{
 	NEWMESSAGE = 1,
 	CONNECTED = 2,
 	LISTUSER = 3,
+	LOGIN = 4,
+	SERVEROFF = 5,
+	OFFLINE = 6,
 	} commandcli;
 typedef enum {
 	USER = 0,
@@ -40,7 +43,6 @@ typedef enum {
 	STAND_BY = 2,
 	PRIVATE = 3,
 	PUBLIC = 4,
-	OFFLINE = 5,
 	} status;
 /*--Struct Principali--*/
 typedef struct {

@@ -31,6 +31,7 @@
 #include <unistd.h>
 #include <pthread.h>
 #include <wait.h>
+#include <signal.h>
 
 /*----Header Personali----*/
 #include "Funzioni.h"
@@ -40,10 +41,10 @@
 /*--Variabili Server--*/
 conn connessione[MAXCLIENT];
 pthread_t serlo, serchat, sermess;
-int threadlogin, threadclient;
+int threadlogin, threadclient, off;
 parse paramserverlog, paramserverchat, paramservermessage;
 pthread_mutex_t gmem;
-
+servertoclient tomex;
 /*-------Main---------*/
 int main (void){
 	printf("Inizializzazione Memoria...\n");
@@ -89,24 +90,33 @@ int main (void){
 		exit (EXIT_FAILURE);
 	}
 /*----------------------------------------------------------------------------------*/
+	//printf("NB. Digitare 54321 per Spegnere il Server\n");
 	
-	pthread_join(serlo, NULL);
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
+	while (1){
+		scanf("%d", &off);
+		FFLUSH;
+		if (off == 54321){
+			tomex.CMD = SERVEROFF;
+			pthread_mutex_lock (&gmem);
+			for (off = 0; off < MAXCLIENT; off++){
+				if(connessione[off].SOCK){
+					printf("Socket connesse %d\n", connessione[off].SOCK);
+					if(write(connessione[off].SOCK,&tomex,sizeof(servertoclient)) == -1){
+						printf("[SERVER]Errore Invio Chiusura\n");
+						exit(EXIT_FAILURE);
+					}
+					printf("[SERVER]Sock %d chiusa\n", connessione[off].SOCK);
+				}
+			}
+				pthread_mutex_unlock(&gmem);
+				pthread_kill (sermess,SIGUSR1);
+				pthread_join (sermess, NULL);
+				pthread_kill (serchat, SIGUSR2);
+				pthread_join (serchat, NULL);
+				pthread_kill (serlo, SIGPROF);
+				pthread_join (serlo, NULL);
+				exit(EXIT_SUCCESS);	
+		}
+	}
 }
 

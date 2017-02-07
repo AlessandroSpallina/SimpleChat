@@ -73,6 +73,23 @@ void *ClientThreadMSG (void *arg){
 				printf("[SERVER]: L'utente digitato non esiste o non e' OFFLINE\n");
 				break;
 			}
+			case SERVEROFF: {
+				printf("[SERVER]: Il Server sta per essere chiuso, chiusura client in corso...\n");
+				if (close(socket_login) == -1){
+					printf("Errore Chiusura Socket Client \n");
+					exit(EXIT_FAILURE);
+				}
+				if (close(socket_chat) == -1){
+					printf("Errore Chiusura Socket Client \n");
+					exit(EXIT_FAILURE);
+				}
+				if (close(socket_message) == -1){
+					printf("Errore Chiusura Socket Client \n");
+					exit(EXIT_FAILURE);
+				}
+				exit(EXIT_SUCCESS);
+				break;
+			}
 		}
 	}
 }
@@ -93,12 +110,10 @@ int main (void){
 		printf("Errore Connessione al ServerLogin\n");
 		exit(EXIT_FAILURE);
 	}
-	printf("Generazione della Struct di Connessione\n");
 	srand(time(NULL));
 	connection.CLID = (rand()%2500)+(rand()%2500);
 	connection.CLGRP = USERTYPE;
 	connection.STAT = ONLINE;
-	printf("Invio Struct\n");
 	if(write (socket_login, &connection, sizeof(conn)) == -1){
 		printf("Errore Invio Struct Messaggio\n");
 		exit(EXIT_FAILURE);

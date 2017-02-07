@@ -28,6 +28,18 @@ void *ServerLogin (void *arg){
 	char user[5] = "User", moderator[10] = "Moderator";
 	printf("Avvio SocketLogin in corso...\n");
 	int socket_server, socket_client;
+	/*-------*/
+	void AllOutLogin (){
+	printf("[LOGIN]Ricevuto Segnale di Chiusura\n");
+	if(close(socket_server) == -1){
+		printf("[LOGIN]Errore Chiusura Socket Message\n");
+		exit(EXIT_FAILURE);
+	}
+	printf("[LOGIN]Socket Chiusa, Terminazione Thread.\n");
+	pthread_exit(NULL);
+	}
+	/*------*/
+	signal(SIGPROF,AllOutLogin);
 	if ((socket_server = socket(AF_INET, SOCK_STREAM, 0)) == -1){
 		printf("Errore Creazione Socket\n");
 		exit(EXIT_FAILURE);
@@ -85,30 +97,29 @@ void *ServerLogin (void *arg){
 						break;
 				}
 			}
-		};
+		}
 /*------Ingresso in Sezione Critica-----------*/
-		pthread_mutex_lock (a->gmem);		
-		for (tmp = 0;tmp < MAXCLIENT; tmp++){
-			//printf("id %d\n",a->connection[tmp].CLID);
-			if (!a->connection[tmp].CLID){
-				//a->connection[tmp].SOCK = socket_client;
-				a->connection[tmp].CLID = sconn.CLID;
-				stoc.CMD = CONNECTED;
-				write (socket_client, &stoc, sizeof(servertoclient));
-				printf("[LOGIN]Inviato CONNECTED\n");
-				break;
+				pthread_mutex_lock (a->gmem);		
+				for (tmp = 0;tmp < MAXCLIENT; tmp++){
+					//printf("id %d\n",a->connection[tmp].CLID);
+					if (!a->connection[tmp].CLID){
+					a->connection[tmp].CLID = sconn.CLID;
+					stoc.CMD = CONNECTED;
+					write (socket_client, &stoc, sizeof(servertoclient));
+					printf("[LOGIN]Inviato CONNECTED\n");
+					break;
+					}
+				}
+				if (tmp == MAXCLIENT){
+					printf("[LOGIN]Inviato BUSY\n");
+					stoc.CMD = BUSY;
+					write(socket_client, &stoc, sizeof(servertoclient));
+				}
+				pthread_mutex_unlock(a->gmem);
+/*---------Uscita Sezione Critica-------------*/	
 			}
 		}
-		if (tmp == MAXCLIENT){
-			printf("[LOGIN]Inviato BUSY\n");
-			stoc.CMD = BUSY;
-			write(socket_client, &stoc, sizeof(servertoclient));
-		}
-		pthread_mutex_unlock(a->gmem);
-/*---------Uscita Sezione Critica-------------*/
-	}
-}
-
+		
 void *ThreadClient (void *arg){
 	parth *paramthread = (parth*)arg;
 	servertoclient msg;
@@ -179,6 +190,18 @@ void *ServerChat (void *arg){
 	parth paramthread;
 	printf("Avvio SocketChat in corso...\n");
 	int socket_serverchat, socket_clientchat;
+	/*-------*/
+	void AllOutChat (){
+	printf("[CHAT]Ricevuto Segnale di Chiusura\n");
+	if(close(socket_serverchat) == -1){
+		printf("[CHAT]Errore Chiusura Socket Chat\n");
+		exit(EXIT_FAILURE);
+	}
+	printf("[CHAT]Socket Chiusa, Terminazione Thread.\n");
+	pthread_exit(NULL);
+	}
+	/*------*/
+	signal(SIGUSR2,AllOutChat);
 	if ((socket_serverchat = socket(AF_INET, SOCK_STREAM, 0)) == -1){
 		printf("Errore Creazione SocketChat\n");
 		exit(EXIT_FAILURE);
@@ -287,8 +310,21 @@ void *ServerMessage (void *arg){
 	parse *c = (parse*)arg;
 	parth paramthread;
 	pthread_t threadmessage;
+	servertoclient tomex2;
 	printf("Avvio SocketMessage in corso...\n");
-	int socket_message, socket_clientmessage;
+	int socket_message, socket_clientmessage, co;
+	/*-------*/
+	void AllOutMessage (){
+	printf("[MESSAGE]Ricevuto Segnale di Chiusura\n");
+	if(close(socket_message) == -1){
+		printf("[MESSAGE]Errore Chiusura Socket Message\n");
+		exit(EXIT_FAILURE);
+	}
+	printf("[MESSAGE]Socket Chiusa, Terminazione Thread.\n");
+	pthread_exit(NULL);
+	}
+	/*------*/
+	signal(SIGUSR1,AllOutMessage);
 	if ((socket_message = socket(AF_INET, SOCK_STREAM, 0)) == -1){
 		printf("Errore Creazione SocketChat\n");
 		exit(EXIT_FAILURE);
@@ -329,5 +365,4 @@ void *ServerMessage (void *arg){
 		}
 	}
 }
-
 
