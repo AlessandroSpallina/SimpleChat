@@ -30,20 +30,19 @@
 #include <arpa/inet.h>
 #include <time.h>
 #include <unistd.h>
-#include "HeaderCHAT.h"
+#include "Header.h"
 #include <sys/sem.h>
 #include <sys/ipc.h>
 #include <pthread.h>
 /*---------Define--------*/
-#define SERVER_ON 1
+//#define SERVER_ON 1
 #define USERTYPE USER
-
+#define FFLUSH while(getchar() != '\n')
 /*------Variabili-----*/
 conn connection;
-servertoclient stoc, msg;
-servertoclient toclient;
+servertoclient stoc, toclient;
 int scelta, count,socket_login, socket_chat, socket_message;
-boolean clienton;
+boolean onroom;
 pthread_t recmsg;
 /*----Funzioni------*/
 void LDS (char s[], unsigned short dim){
@@ -89,6 +88,18 @@ void *ClientThreadMSG (void *arg){
 				exit(EXIT_SUCCESS);
 				break;
 			}
+			case MESSAGETOROOM:{
+				printf("[%s]%d: %s\n", message.stanza.roomname, message.MSGSTOC.CLID, message.MSGSTOC.message);
+				break;
+			}
+			case ERRORROOM: {
+				printf("Non Sei Registrato a questa Stanza\n");
+				break;
+			}
+			case ERRORROOM2: {
+				printf("La Stanza Inserita non Esiste\n");
+				break;
+			}
 		}
 	}
 }
@@ -111,6 +122,7 @@ int main (void){
 	}
 	srand(time(NULL));
 	connection.CLID = (rand()%2500)+(rand()%2500);
+	toclient.MSGSTOC.CLID = connection.CLID;
 	connection.CLGRP = USERTYPE;
 	connection.STAT = ONLINE;
 	strcpy(connection.psk, "1806");
@@ -173,15 +185,16 @@ int main (void){
 			printf("Connesso\n");		
 			printf("Apertura Menu Testuale\n");
 			while (1){
-				printf("1 - Lista Contatti Attivi\n2 - Invia Messaggio Pubblico\n3 - Invia Messaggio Privato\n4 - Esci\n");
+				printf("1 - Lista Contatti Attivi\n2 - Invia Messaggio Pubblico\n3 - Invia Messaggio Privato\n");
+				printf("4 - Crea Stanza\n5 - Lista Stanze\n6 - Entra nella Stanza\n7 - Messaggio in Stanza\n8 - Cancella Stanza\n9 - Esci\n");
 				if (connection.CLGRP == MODERATOR) printf("Nascosto\n");
 					scanf("%d", &scelta);
 					FFLUSH;
 					switch (scelta){
 						case 1:{
 							int tmp[MAXCLIENT];
-							msg.CMD = LISTUSER;
-							if(write (socket_chat, &msg, sizeof(servertoclient)) == -1){
+							toclient.CMD = LISTUSER;
+							if(write (socket_chat, &toclient, sizeof(servertoclient)) == -1){
 								printf("Errore Invio Struct Messaggio\n");
 								exit(EXIT_FAILURE);
 							}
@@ -220,14 +233,115 @@ int main (void){
 							break;
 						}
 						case 4:{
+							printf("Inserire il nome della stanza\n");
+							toclient.CMD = NEWROOM;
+							LDS(toclient.stanza.roomname, MAXLENGTHMESSAGE);
+							if (strcmp(toclient.stanza.roomname, "\0")){
+								if(write(socket_chat, &toclient, sizeof(servertoclient)) == -1){
+									printf("Errore Invio Stanza\n");
+									exit(EXIT_FAILURE);
+								}
+								read(socket_chat, &toclient, sizeof(servertoclient));
+								if (toclient.CMD == ROOMOK) printf("Stanza Creata Con Successo\n");
+								if (toclient.CMD == BUSY) printf("Max quantita' Stanze Raggiunto, Impossibile Creare nuove Stanze\n");
+							}
+							else printf("Nome non valido\n");
+							break;
+						}
+						case 5:{
+							room lista[MAXROOM];
+							toclient.CMD = ROOMLIST;
+							write(socket_chat, &toclient, sizeof(servertoclient));
+							read(socket_chat, &lista, sizeof(lista));
+							printf("Stanza			Owner\n\n");
+							for(count = 0; count < MAXROOM; count++){
+								if (lista[count].CLID) printf("%s			%d\n\n", lista[count].roomname, lista[count].CLID);
+							}
+							break;
+						}
+						case 6:{
+							printf("Inserire il nome della stanza\n");
+							toclient.CMD = ENTERROOM;
+							LDS(toclient.stanza.roomname, MAXLENGTHMESSAGE);
+							if (strcmp(toclient.stanza.roomname, "\0")){
+								//printf("Nome Stanza: %s\n", toclient.stanza.roomname);
+								if(write(socket_chat, &toclient, sizeof(servertoclient)) == -1){
+									printf("Errore Invio Stanza\n");
+									exit(EXIT_FAILURE);
+								}
+								read(socket_chat, &toclient, sizeof(servertoclient));
+								switch (toclient.CMD){
+									case ERRORROOM2: {
+										printf("La Stanza non esiste\n");
+										break;
+									}
+									case ERRORROOM:{
+										printf("Client gia' registrato nella stanza\n");
+										break;
+									}
+									case BUSY: {
+										printf("Stanza piena\n");
+										break;
+									}
+									case ROOMOK:{
+										printf("Utente Registrato alla stanza %s\n", toclient.stanza.roomname);
+										onroom = 1;
+										break;
+									}
+								}
+							}
+							break;
+						}
+						case 7:{
+							if (!onroom){
+								printf("Effettuare prima l'accesso ad una stanza\n");
+								break;
+							}
+							else {
+								printf("Inserire il nome della stanza\n");
+								toclient.CMD = MESSAGETOROOM;
+								LDS(toclient.stanza.roomname, MAXLENGTHMESSAGE);
+								printf("Inserire il Messaggio da mandare\n");
+								LDS(toclient.MSGSTOC.message, MAXLENGTHMESSAGE);
+								if (strcmp(toclient.stanza.roomname, "\0")){
+									printf("Nome Stanza: %s\n", toclient.stanza.roomname);
+									if(write(socket_message, &toclient, sizeof(servertoclient)) == -1){
+										printf("Errore Invio Stanza\n");
+										exit(EXIT_FAILURE);
+									}
+								}	
+							break;
+							}
+						}
+						case 8:{
+							printf("Inserire il nome della stanza da eliminare\n");
+							toclient.CMD = ERASEROOM;
+							LDS(toclient.stanza.roomname, MAXLENGTHMESSAGE);
+							if(write(socket_chat, &toclient, sizeof(servertoclient)) == -1){
+								printf("Errore Invio Stanza\n");
+								exit(EXIT_FAILURE);
+							}
+							read(socket_chat, &toclient, sizeof(servertoclient));
+							switch (toclient.CMD){
+								case ROOMOK:{
+									printf("Stanza Cancellata\n");
+									break;
+								}
+								case ERRORROOM:{
+									printf("Non sei il creatore della stanza, impossibile eliminarla.\n");
+									break;
+								}
+							}
+							break;
+						}
+						case 9:{
 							printf("Chiusura in Corso\n");
-							msg.MSGSTOC.CLID = connection.CLID;
-							msg.CMD = EXIT;
-							if(write (socket_chat, &msg, sizeof(servertoclient)) == -1){
+							toclient.CMD = EXIT;
+							if(write (socket_chat, &toclient, sizeof(servertoclient)) == -1){
 								printf("Errore Invio Struct Messaggio\n");
 								exit(EXIT_FAILURE);
 							}
-							if(write (socket_message, &msg, sizeof(servertoclient)) == -1){
+							if(write (socket_message, &toclient, sizeof(servertoclient)) == -1){
 								printf("Errore Invio Struct Messaggio\n");
 								exit(EXIT_FAILURE);
 							}
@@ -257,5 +371,6 @@ int main (void){
 			}
 		}	
 	}
+
 
 

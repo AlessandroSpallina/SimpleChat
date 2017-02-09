@@ -34,7 +34,7 @@
 #include <signal.h>
 
 /*----Header Personali----*/
-#include "Funzioni.h"
+#include "Function.h"
 /*---------Define--------*/
 #define SERVER_ON 1
 
@@ -45,6 +45,7 @@ int threadlogin, threadclient, off;
 parse paramserverlog, paramserverchat, paramservermessage;
 pthread_mutex_t gmem;
 servertoclient tomex;
+room vector[MAXROOM];
 /*-------Main---------*/
 int main (void){
 	printf("Inizializzazione Memoria...\n");
@@ -74,6 +75,7 @@ int main (void){
 	paramserverchat.connection = connessione;
 	paramserverchat.server_on = SERVER_ON;
 	paramserverchat.gmem = &gmem;
+	paramserverchat.stanza = vector;
 	if (pthread_create(&serchat, NULL, ServerChat, (void *)&paramserverchat) == -1) {
 		printf("Errore Creazione Thread\n");
 		exit (EXIT_FAILURE);
@@ -85,6 +87,7 @@ int main (void){
 	paramservermessage.connection = connessione;
 	paramservermessage.server_on = SERVER_ON;
 	paramservermessage.gmem = &gmem;
+	paramservermessage.stanza = vector;
 	if (pthread_create(&sermess, NULL, ServerMessage, (void *)&paramservermessage) == -1) {
 		printf("Errore Creazione Thread\n");
 		exit (EXIT_FAILURE);
