@@ -44,6 +44,7 @@ servertoclient stoc, toclient;
 int scelta, count,socket_login, socket_chat, socket_message;
 boolean onroom;
 pthread_t recmsg;
+time_t now;
 /*----Funzioni------*/
 void LDS (char s[], unsigned short dim){
 		unsigned short i;
@@ -53,6 +54,20 @@ void LDS (char s[], unsigned short dim){
 		s[i] = '\0';
 	
 }
+const char* Hours (void){
+	time_t now;
+	int i = 11,c;
+	char tmp[25];
+	char *nowtime = (char*)malloc(sizeof(char)*25);
+	now = time(NULL);
+	strcpy(tmp, ctime(&now));
+	for (c = 0; c < 8; c++){
+			nowtime[c] = tmp[i];
+			i++;
+	}
+	nowtime[8]= '\0';
+	return nowtime;	
+}
 void *ClientThreadMSG (void *arg){
 	servertoclient message;
 	printf("[CHAT ATTIVA]\n");
@@ -60,11 +75,11 @@ void *ClientThreadMSG (void *arg){
 		read(socket_message, &message, sizeof(servertoclient));
 		switch (message.CMD){
 			case PRIVATE:{
-				printf("[PRIVATO]%d: %s\n",message.MSGSTOC.CLID, message.MSGSTOC.message);
+				printf("[PRIVATO]<%s> %d: %s\n",message.MSGSTOC.timenow, message.MSGSTOC.CLID, message.MSGSTOC.message);
 				break;
 			}
 			case PUBLIC:{
-				printf("[PUBBLICO]%d: %s\n",message.MSGSTOC.CLID, message.MSGSTOC.message);
+				printf("[PUBBLICO]<%s> %d: %s\n",message.MSGSTOC.timenow, message.MSGSTOC.CLID, message.MSGSTOC.message);
 				break;
 			}
 			case OFFLINE:{
@@ -89,7 +104,7 @@ void *ClientThreadMSG (void *arg){
 				break;
 			}
 			case MESSAGETOROOM:{
-				printf("[%s]%d: %s\n", message.stanza.roomname, message.MSGSTOC.CLID, message.MSGSTOC.message);
+				printf("[%s]<%s> %d: %s\n", message.stanza.roomname,message.MSGSTOC.timenow, message.MSGSTOC.CLID, message.MSGSTOC.message);
 				break;
 			}
 			case ERRORROOM: {
@@ -99,6 +114,9 @@ void *ClientThreadMSG (void *arg){
 			case ERRORROOM2: {
 				printf("La Stanza Inserita non Esiste\n");
 				break;
+			}
+			case PUBLICMOD:{
+				printf("[MOD]<%s> %d: %s\n",message.MSGSTOC.timenow, message.MSGSTOC.CLID, message.MSGSTOC.message);
 			}
 		}
 	}
@@ -115,7 +133,7 @@ int main (void){
 	addresserver.sin_family = AF_INET;
 	addresserver.sin_port = htons(PORTLOGIN);
 	addresserver.sin_addr.s_addr = inet_addr(IPSERVER);
-	printf("Connessione in Corso al ServerLogin...\n");
+	printf("Connessione al Server\n");
 	if (connect (socket_login, (struct sockaddr*)&addresserver, sizeof(addresserver)) == -1){
 		printf("Errore Connessione al ServerLogin\n");
 		exit(EXIT_FAILURE);
@@ -125,16 +143,15 @@ int main (void){
 	toclient.MSGSTOC.CLID = connection.CLID;
 	connection.CLGRP = USERTYPE;
 	connection.STAT = ONLINE;
+	toclient.MSGSTOC.CLGRP = USERTYPE;
 	strcpy(connection.psk, "1806");
 	strcat(connection.psk, PSK);
 	strcat(connection.psk, "2016");
-	//printf("%s\n", connection.psk);
 	stoc.CMD = ERRORPSK;
 	if(write (socket_login, &connection, sizeof(conn)) == -1){
 		printf("Errore Invio Struct Messaggio\n");
 		exit(EXIT_FAILURE);
 	}
-	printf("Connessione in corso...\n");
 	if (read(socket_login, &stoc, sizeof(servertoclient)) == -1){
 		printf("Errore Ricezione Risposta Collegamento\n");
 		exit(EXIT_FAILURE);
@@ -149,8 +166,8 @@ int main (void){
 			exit(EXIT_FAILURE);
 		}
 		case CONNECTED: {
-			printf("Connesso al ServerLogin\n");
-			printf("Avvio Socket Client (Chat) in corso...\n");
+			printf("Connesso\n");
+			//printf("Avvio Socket Client (Chat) in corso...\n");
 			if ((socket_chat = socket(AF_INET, SOCK_STREAM, 0)) == -1){
 				printf("Errore Creazione SocketChat\n");
 				exit(EXIT_FAILURE);
@@ -166,12 +183,12 @@ int main (void){
 			addresservermessage.sin_family = AF_INET;
 			addresservermessage.sin_port = htons(PORTMESSAGE);
 			addresservermessage.sin_addr.s_addr = inet_addr(IPSERVER);
-			printf("Connessione in Corso al ServerLogin...\n");
+			//printf("Connessione in Corso al ServerLogin...\n");
 			if (connect (socket_chat, (struct sockaddr*)&addresserverchat, sizeof(addresserverchat)) == -1){
 				printf("Errore Connessione al ServerLogin\n");
 				exit(EXIT_FAILURE);
 			}
-			printf("Connessione in Corso al ServerMessage...\n");
+			//printf("Connessione in Corso al ServerMessage...\n");
 			if (connect (socket_message, (struct sockaddr*)&addresservermessage, sizeof(addresservermessage)) == -1){
 				printf("Errore Connessione al ServerMessage\n");
 				exit(EXIT_FAILURE);
@@ -181,13 +198,10 @@ int main (void){
 			if (pthread_create(&recmsg, NULL, ClientThreadMSG, NULL) == -1){
 				printf("Errore Creazione ThreadPVT\n");
 				exit(EXIT_FAILURE);
-				}
-			printf("Connesso\n");		
-			printf("Apertura Menu Testuale\n");
+				}	
 			while (1){
 				printf("1 - Lista Contatti Attivi\n2 - Invia Messaggio Pubblico\n3 - Invia Messaggio Privato\n");
 				printf("4 - Crea Stanza\n5 - Lista Stanze\n6 - Entra nella Stanza\n7 - Messaggio in Stanza\n8 - Cancella Stanza\n9 - Esci\n");
-				if (connection.CLGRP == MODERATOR) printf("Nascosto\n");
 					scanf("%d", &scelta);
 					FFLUSH;
 					switch (scelta){
@@ -213,6 +227,7 @@ int main (void){
 							toclient.CMD = PUBLIC;
 							printf("Inserire il Messaggio da mandare\n");
 							LDS(toclient.MSGSTOC.message, MAXLENGTHMESSAGE);
+							strcpy(toclient.MSGSTOC.timenow, Hours());
 							if (write (socket_message, &toclient, sizeof(servertoclient)) == -1){
 								printf("Errore Invio Struct Messaggio\n");
 								exit(EXIT_FAILURE);
@@ -224,8 +239,10 @@ int main (void){
 							toclient.CMD = PRIVATE;
 							scanf("%d", &toclient.MSGSTOC.MSGTOID);
 							FFLUSH;
+							
 							printf("Inserire il Messaggio da mandare\n");
 							LDS(toclient.MSGSTOC.message, MAXLENGTHMESSAGE);
+							strcpy(toclient.MSGSTOC.timenow, Hours());
 							if (write (socket_message, &toclient, sizeof(servertoclient)) == -1){
 								printf("Errore Invio Struct Messaggio\n");
 								exit(EXIT_FAILURE);
@@ -305,6 +322,7 @@ int main (void){
 								LDS(toclient.MSGSTOC.message, MAXLENGTHMESSAGE);
 								if (strcmp(toclient.stanza.roomname, "\0")){
 									printf("Nome Stanza: %s\n", toclient.stanza.roomname);
+									strcpy(toclient.MSGSTOC.timenow, Hours()); 
 									if(write(socket_message, &toclient, sizeof(servertoclient)) == -1){
 										printf("Errore Invio Stanza\n");
 										exit(EXIT_FAILURE);
@@ -330,6 +348,9 @@ int main (void){
 								case ERRORROOM:{
 									printf("Non sei il creatore della stanza, impossibile eliminarla.\n");
 									break;
+								}
+								case ERRORROOM2:{
+									printf("La Stanza non esiste\n");
 								}
 							}
 							break;

@@ -44,7 +44,8 @@ typedef enum{
 	ERRORROOM = 12,
 	ERRORROOM2 = 13,
 	MESSAGETOROOM = 14,
-	ERASEROOM = 15,	
+	ERASEROOM = 15,
+	PUBLICMOD = 16,	
 	} commandcli;
 typedef enum {
 	USER = 0,
@@ -59,7 +60,7 @@ typedef enum {
 	} status;
 /*--Struct Principali--*/
 typedef struct {
-	time_t send_time;
+	char timenow[9];
 	char message[MAXLENGTHMESSAGE];
 	int CLID, MSGTOID;
 	group CLGRP;
