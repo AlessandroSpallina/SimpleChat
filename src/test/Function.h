@@ -348,8 +348,32 @@ void *ThreadChat (void *arg){
 				}
 				break;
 			}
-		}
-	};
+			case EXITROOM: {
+				int i;
+				pthread_mutex_lock(paramthread->gmem);
+				for (count = 0; count < MAXROOM; count++){
+					if (!strcmp(paramthread->stanza[count].roomname, msg.stanza.roomname)){
+						for (i = 0; i < MAXUROOM; i++){
+							if(paramthread->stanza[count].userin[i] == msg.MSGSTOC.CLID){
+								paramthread->stanza[count].userin[i] = 0;
+								msg.CMD = ROOMOK;
+								printf("[%s,TCHAT]:%d, Rimosso da: %s\n", Hours(),msg.MSGSTOC.CLID, msg.stanza.roomname);
+								write(sockclientnew, &msg, sizeof(servertoclient));
+								break;
+							}
+						}
+						break;
+					}
+				}
+				pthread_mutex_unlock(paramthread->gmem);
+				if (count == MAXROOM){
+					msg.CMD = ERRORROOM2;
+					write(sockclientnew, &msg, sizeof(servertoclient));
+				}
+				break;
+			}
+		};
+	}
 }
 
 void *ServerChat (void *arg){

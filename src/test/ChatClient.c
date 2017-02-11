@@ -201,7 +201,8 @@ int main (void){
 				}	
 			while (1){
 				printf("1 - Lista Contatti Attivi\n2 - Invia Messaggio Pubblico\n3 - Invia Messaggio Privato\n");
-				printf("4 - Crea Stanza\n5 - Lista Stanze\n6 - Entra nella Stanza\n7 - Messaggio in Stanza\n8 - Cancella Stanza\n9 - Esci\n");
+				printf("4 - Crea Stanza\n5 - Lista Stanze\n6 - Entra nella Stanza\n7 - Messaggio in Stanza\n8 - Cancella Stanza\n");
+				printf("9 - Esci dalla Stanza\n10 - Chiudi Client\n");
 					scanf("%d", &scelta);
 					FFLUSH;
 					switch (scelta){
@@ -356,6 +357,33 @@ int main (void){
 							break;
 						}
 						case 9:{
+							if (!onroom){
+								printf("Effettuare prima l'accesso ad una stanza\n");
+								break;
+							}
+							else {
+								printf("Inserire il nome della stanza da cui uscire\n");
+								toclient.CMD = EXITROOM;
+								LDS(toclient.stanza.roomname, MAXLENGTHMESSAGE);
+								if(write(socket_chat, &toclient, sizeof(servertoclient)) == -1){
+									printf("Errore Invio Stanza\n");
+									exit(EXIT_FAILURE);
+								}
+								read(socket_chat, &toclient, sizeof(servertoclient));
+								switch (toclient.CMD){
+									case ROOMOK:{
+										printf("Non sei piu nella Stanza: %s\n",toclient.stanza.roomname);
+										onroom = 0;
+										break;
+									}
+									case ERRORROOM2:{
+										printf("La Stanza non esiste\n");
+									}
+								}
+								break;
+							}
+						}
+						case 10:{
 							printf("Chiusura in Corso\n");
 							toclient.CMD = EXIT;
 							if(write (socket_chat, &toclient, sizeof(servertoclient)) == -1){

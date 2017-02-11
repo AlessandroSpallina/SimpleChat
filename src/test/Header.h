@@ -46,6 +46,7 @@ typedef enum{
 	MESSAGETOROOM = 14,
 	ERASEROOM = 15,
 	PUBLICMOD = 16,	
+	EXITROOM = 17,
 	} commandcli;
 typedef enum {
 	USER = 0,
