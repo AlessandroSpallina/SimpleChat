@@ -34,5 +34,5 @@
 #define SERVER_CHAT_ON 1			//Abilitazione Accept Server Chat (boolean)
 #define SERVER_MESSAGE_ON 1			//Abilitazione Accept Server Message (boolean)
 #define TIMEWAIT 1					//Tempo di Attesa Avvio Thread Server (second)
-#define TURNOFF 1					//Abilitazione Spegnimento Interattivo (boolean)
+#define TURNOFF 0					//Abilitazione Modalita Demone(0)/Interattivo(1)
 /*--------------------------------------------------------------------------*/

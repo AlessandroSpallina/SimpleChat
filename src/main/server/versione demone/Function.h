@@ -69,10 +69,10 @@ void *ServerLogin (void *arg){
 	strcat(psk, PSK);
 	strcat(psk, "2016");
 	fprintf(filelog,"Log SERVERCHAT ThreadServerLogin: %s\n",ctime(&forfile));
-	printf("[%s,LOGIN]Avvio SocketLogin\n", Hours());
+	if (TURNOFF) printf("[%s,LOGIN]Avvio SocketLogin\n", Hours());
 	fprintf(filelog,"[%s,LOGIN]Avvio SocketLogin\n", Hours());
 	if ((socket_server = socket(AF_INET, SOCK_STREAM, 0)) == -1){
-		printf("[%s,LOGIN]Errore Creazione Socket\n", Hours());
+		if (TURNOFF) printf("[%s,LOGIN]Errore Creazione Socket\n", Hours());
 		fprintf(filelog,"[%s,LOGIN]Errore Creazione Socket\n", Hours());
 		fclose(filelog);
 		exit(EXIT_FAILURE);
@@ -81,23 +81,23 @@ void *ServerLogin (void *arg){
 	address.sin_family = AF_INET;
 	inet_aton(IPSERVER, &address.sin_addr);
 	address.sin_port = htons(PORTLOGIN);
-	printf("[%s,LOGIN]: Porta Usata: %d, Indirizzo Usato: %s\n", Hours(), ntohs (address.sin_port), inet_ntoa(address.sin_addr));
+	if (TURNOFF) printf("[%s,LOGIN]: Porta Usata: %d, Indirizzo Usato: %s\n", Hours(), ntohs (address.sin_port), inet_ntoa(address.sin_addr));
 	fprintf(filelog,"[%s,LOGIN]: Porta Usata: %d, Indirizzo Usato: %s\n", Hours(), ntohs (address.sin_port), inet_ntoa(address.sin_addr));
 	socklen_t lensock;
 	lensock = (socklen_t)sizeof(address);
 	if (bind(socket_server, (struct sockaddr*)&address, lensock) == -1){
-		printf("[%s,LOGIN]Errore Avvio Bind\n", Hours());
+		if (TURNOFF) printf("[%s,LOGIN]Errore Avvio Bind\n", Hours());
 		fprintf(filelog,"[%s,LOGIN]Errore Avvio Bind\n", Hours());
 		fclose(filelog);
 		exit(EXIT_FAILURE);
 	}
 	if (listen(socket_server, 5) == -1){
-		printf("[%s,LOGIN]Errore Avvio Listen\n", Hours());
+		if (TURNOFF) printf("[%s,LOGIN]Errore Avvio Listen\n", Hours());
 		fprintf(filelog,"[%s,LOGIN]Errore Avvio Listen\n", Hours());
 		fclose(filelog);
 		exit(EXIT_FAILURE);
 	}
-	printf("[%s,LOGIN]In Ricezione\n", Hours());
+	if (TURNOFF) printf("[%s,LOGIN]In Ricezione\n", Hours());
 	fprintf(filelog,"[%s,LOGIN]In Ricezione\n", Hours());
 /*------Server di Registrazione-----*/	
 	while (a->server_on){
@@ -403,10 +403,10 @@ void *ServerChat (void *arg){
 	}
 	/*------*/
 	signal(SIGUSR2,AllOutChat);
-	printf("[%s,CHAT]Avvio SocketChat\n", Hours());
+	if (TURNOFF) printf("[%s,CHAT]Avvio SocketChat\n", Hours());
 	fprintf(filelog,"[%s,CHAT]Avvio SocketChat\n", Hours());
 	if ((socket_serverchat = socket(AF_INET, SOCK_STREAM, 0)) == -1){
-		printf("[%s,CHAT]Errore Creazione SocketChat\n", Hours());
+		if (TURNOFF) printf("[%s,CHAT]Errore Creazione SocketChat\n", Hours());
 		fprintf(filelog,"[%s,CHAT]Errore Creazione SocketChat\n", Hours());
 		fclose(filelog);
 		exit(EXIT_FAILURE);
@@ -415,23 +415,23 @@ void *ServerChat (void *arg){
 	addresschat.sin_family = AF_INET;
 	inet_aton(IPSERVER, &addresschat.sin_addr);
 	addresschat.sin_port = htons(PORTCHAT);
-	printf("[%s,CHAT]: Porta Usata: %d, Indirizzo Usato: %s\n", Hours(), ntohs(addresschat.sin_port), inet_ntoa(addresschat.sin_addr));
+	if (TURNOFF) printf("[%s,CHAT]: Porta Usata: %d, Indirizzo Usato: %s\n", Hours(), ntohs(addresschat.sin_port), inet_ntoa(addresschat.sin_addr));
 	fprintf(filelog,"[%s,CHAT]: Porta Usata: %d, Indirizzo Usato: %s\n", Hours(), ntohs(addresschat.sin_port), inet_ntoa(addresschat.sin_addr));
 	socklen_t lensockchat;
 	lensockchat = (socklen_t)sizeof(addresschat);
 	if (bind(socket_serverchat, (struct sockaddr*)&addresschat, lensockchat) == -1){
-		printf("[%s,CHAT]Errore Avvio BindChat\n", Hours());
+		if (TURNOFF) printf("[%s,CHAT]Errore Avvio BindChat\n", Hours());
 		fprintf(filelog,"[%s,CHAT]Errore Avvio BindChat\n", Hours());
 		fclose(filelog);
 		exit(EXIT_FAILURE);
 	}
 	if (listen(socket_serverchat, 5) == -1){
-		printf("[%s,CHAT]Errore Avvio ListenChat\n", Hours());
+		if (TURNOFF) printf("[%s,CHAT]Errore Avvio ListenChat\n", Hours());
 		fprintf(filelog,"[%s,CHAT]Errore Avvio ListenChat\n", Hours());
 		fclose(filelog);
 		exit(EXIT_FAILURE);
 	}
-	printf("[%s,CHAT]In Ricezione\n", Hours());
+	if (TURNOFF) printf("[%s,CHAT]In Ricezione\n", Hours());
 	fprintf(filelog,"[%s,CHAT]In Ricezione\n", Hours());
 	while(b->server_on){
 		socket_clientchat = accept(socket_serverchat, (struct sockaddr*)&addresschat, &lensockchat);
@@ -589,7 +589,7 @@ void *ServerMessage (void *arg){
 	forfile = time(NULL);
 	char nmf[30];
 	strcpy(nmf,ctime(&forfile));
-	strcat(nmf, "-sc");
+	strcat(nmf, "-sm");
 	filelog = fopen(nmf, "a");
 	/*-------*/
 	void AllOutMessage (){
@@ -608,7 +608,7 @@ void *ServerMessage (void *arg){
 	}
 	/*------*/
 	signal(SIGUSR1,AllOutMessage);
-	printf("[%s,MESSAGE]Avvio SocketMessage\n", Hours());
+	if (TURNOFF) printf("[%s,MESSAGE]Avvio SocketMessage\n", Hours());
 	fprintf(filelog,"[%s,MESSAGE]Avvio SocketMessage\n", Hours());
 	if ((socket_message = socket(AF_INET, SOCK_STREAM, 0)) == -1){
 		printf("[%s,MESSAGE]Errore Creazione SocketChat\n", Hours());
@@ -620,23 +620,23 @@ void *ServerMessage (void *arg){
 	addresschat.sin_family = AF_INET;
 	inet_aton(IPSERVER, &addresschat.sin_addr);
 	addresschat.sin_port = htons(PORTMESSAGE);
-	printf("[%s,MESSAGE]: Porta Usata: %d, Indirizzo Usato: %s\n", Hours(), ntohs(addresschat.sin_port), inet_ntoa(addresschat.sin_addr));
+	if (TURNOFF) printf("[%s,MESSAGE]: Porta Usata: %d, Indirizzo Usato: %s\n", Hours(), ntohs(addresschat.sin_port), inet_ntoa(addresschat.sin_addr));
 	fprintf(filelog,"[%s,MESSAGE]: Porta Usata: %d, Indirizzo Usato: %s\n", Hours(), ntohs(addresschat.sin_port), inet_ntoa(addresschat.sin_addr));
 	socklen_t lensockchat;
 	lensockchat = (socklen_t)sizeof(addresschat);
 	if (bind(socket_message, (struct sockaddr*)&addresschat, lensockchat) == -1){
-		printf("[%s,MESSAGE]Errore Avvio BindMessage\n", Hours());
+		if (TURNOFF) printf("[%s,MESSAGE]Errore Avvio BindMessage\n", Hours());
 		fprintf(filelog,"[%s,MESSAGE]Errore Avvio BindMessage\n", Hours());
 		fclose(filelog);
 		exit(EXIT_FAILURE);
 	}
 	if (listen(socket_message, 5) == -1){
-		printf("[%s,MESSAGE]Errore Avvio ListenMessage\n", Hours());
+		if (TURNOFF) printf("[%s,MESSAGE]Errore Avvio ListenMessage\n", Hours());
 		fprintf(filelog,"[%s,MESSAGE]Errore Avvio ListenMessage\n", Hours());
 		fclose(filelog);
 		exit(EXIT_FAILURE);
 	}
-	printf("[%s,MESSAGE]In Ricezione\n", Hours());
+	if (TURNOFF) printf("[%s,MESSAGE]In Ricezione\n", Hours());
 	fprintf(filelog,"[%s,MESSAGE]In Ricezione\n", Hours());
 	while(c->server_on){
 		socket_clientmessage = accept(socket_message, (struct sockaddr*)&addresschat, &lensockchat);
@@ -660,4 +660,5 @@ void *ServerMessage (void *arg){
 		}
 	}
 }
+
 /*--------------------------------------------------------------------------*/
