@@ -46,7 +46,7 @@ void SigIntExit ();
 /*-----------------------------------Main-----------------------------------*/
 int main (void){
 	signal(SIGINT,SigIntExit);
-	signal(SIGTERM,SigInt);
+	signal(SIGTERM,SigIntExit);
 	printf("Avvio Client...\n");
 	printf("Avvio Socket Client (Login) in corso...\n");
 	if ((socket_login = socket(AF_INET, SOCK_STREAM, 0)) == -1){
