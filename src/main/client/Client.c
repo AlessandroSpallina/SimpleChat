@@ -41,8 +41,12 @@ boolean onroom;
 pthread_t recmsg;
 time_t now;
 argforthread argthead;
+/*--------------------------------Prototype---------------------------------*/
+void SigIntExit ();
 /*-----------------------------------Main-----------------------------------*/
 int main (void){
+	signal(SIGINT,SigIntExit);
+	signal(SIGTERM,SigInt);
 	printf("Avvio Client...\n");
 	printf("Avvio Socket Client (Login) in corso...\n");
 	if ((socket_login = socket(AF_INET, SOCK_STREAM, 0)) == -1){
@@ -307,35 +311,7 @@ int main (void){
 							}
 						}
 						case 10:{
-							printf("Chiusura in Corso\n");
-							toclient.CMD = EXIT;
-							if(write (socket_chat, &toclient, sizeof(servertoclient)) == -1){
-								printf("Errore Invio Struct Messaggio\n");
-								exit(EXIT_FAILURE);
-							}
-							if(write (socket_message, &toclient, sizeof(servertoclient)) == -1){
-								printf("Errore Invio Struct Messaggio\n");
-								exit(EXIT_FAILURE);
-							}
-							if(pthread_kill(recmsg, SIGSTOP) == -1){
-								printf("Errore Kill\n");
-								exit(EXIT_FAILURE);
-							}
-							if(pthread_cancel (recmsg) == -1){
-								printf("Errore Cancellazione PthreadCHAT\n");
-								exit(EXIT_FAILURE);
-							}
-							if (close(socket_login) == -1){
-								printf("Errore Chiusura Socket Client \n");
-								exit(EXIT_FAILURE);
-							}
-							if (close(socket_chat) == -1){
-								printf("Errore Chiusura Socket Client \n");
-							}
-							if (close(socket_message) == -1){
-								printf("Errore Chiusura Socket Client \n");
-							}
-							exit(EXIT_SUCCESS);
+							SigIntExit();
 						}
 						default: printf("Nessuna scelta valida\n");
 					}
@@ -343,6 +319,40 @@ int main (void){
 			}
 		}	
 	}
-/*--------------------------------------------------------------------------*/
+/*-------------------------Funzione di Uscita (Signal)----------------------*/
+void SigIntExit (){
+	printf("Chiusura in Corso\n");
+	toclient.CMD = EXIT;
+	if(write (socket_chat, &toclient, sizeof(servertoclient)) == -1){
+		printf("Errore Invio Struct Messaggio\n");
+		exit(EXIT_FAILURE);
+	}
+	if(write (socket_message, &toclient, sizeof(servertoclient)) == -1){
+		printf("Errore Invio Struct Messaggio\n");
+		exit(EXIT_FAILURE);
+	}
+	if(pthread_kill(recmsg, SIGSTOP) == -1){
+		printf("Errore Kill\n");
+		exit(EXIT_FAILURE);
+	}
+	if(pthread_cancel (recmsg) == -1){
+		printf("Errore Cancellazione PthreadCHAT\n");
+		exit(EXIT_FAILURE);
+	}
+	if (close(socket_login) == -1){
+		printf("Errore Chiusura Socket Client \n");
+		exit(EXIT_FAILURE);
+	}
+	if (close(socket_chat) == -1){
+		printf("Errore Chiusura Socket Client \n");
+		exit(EXIT_FAILURE);
+	}
+	if (close(socket_message) == -1){
+		printf("Errore Chiusura Socket Client \n");
+		exit(EXIT_FAILURE);
+	}
+	exit(EXIT_SUCCESS);
+}
 
+/*--------------------------------------------------------------------------*/
 
